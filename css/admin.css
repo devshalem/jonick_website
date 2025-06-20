@@ -1,0 +1,66 @@
+body {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  background-color: #f5f5f5; /* Light grey background for admin area */
+}
+
+main {
+  flex: 1 0 auto;
+  padding-left: 300px; /* Adjust for fixed sidebar */
+}
+
+.admin-navbar {
+    padding: 0 20px;
+}
+
+.admin-content {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+/* Adjust Materialize sidenav for fixed behavior */
+.sidenav.sidenav-fixed {
+    width: 300px;
+}
+
+@media only screen and (max-width : 992px) {
+  main, .admin-navbar {
+    padding-left: 0;
+  }
+}
+
+/* Card styles for dashboard overview */
+.admin-content .card-panel {
+    color: white;
+    transition: transform 0.2s ease-in-out;
+    cursor: pointer;
+}
+
+.admin-content .card-panel:hover {
+    transform: translateY(-5px);
+}
+
+.admin-content .card-panel i.large {
+    font-size: 4rem;
+    margin-bottom: 10px;
+}
+
+/* Table specific styles for admin_users.html */
+.data-table {
+    background-color: #fff;
+    box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.2);
+}
+
+.data-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+.data-table td {
+    vertical-align: middle;
+}
+
+.action-btns button {
+    margin-right: 5px;
+}

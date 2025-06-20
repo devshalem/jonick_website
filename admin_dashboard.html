@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/toast.css">
+</head>
+<body>
+
+  <nav class="admin-navbar orange darken-3">
+    <div class="nav-wrapper">
+      <a href="#" class="brand-logo center">Admin Dashboard</a>
+      <a href="#" data-target="sidenav-left" class="sidenav-trigger show-on-large"><i class="material-icons">menu</i></a>
+      <ul class="right hide-on-med-and-down">
+        <li><a href="#" id="admin-logout-btn"><i class="material-icons left">power_settings_new</i>Logout</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <ul id="sidenav-left" class="sidenav sidenav-fixed">
+    <li><div class="user-view">
+      <div class="background">
+        <img src="images/office.jpg"> </div>
+      <a href="#user"><img class="circle" src="images/yuna.jpg"></a> <a href="#name"><span class="white-text name" id="admin-user-name">Admin User</span></a>
+      <a href="#email"><span class="white-text email" id="admin-user-email">admin@example.com</span></a>
+    </div></li>
+    <li><a class="waves-effect" href="admin_dashboard.html"><i class="material-icons">dashboard</i>Dashboard</a></li>
+    <li><div class="divider"></div></li>
+    <li><a class="subheader">Management</a></li>
+    <li><a class="waves-effect" href="admin_users.html"><i class="material-icons">people</i>Users</a></li>
+    <li><a class="waves-effect" href="admin_professionals.html"><i class="material-icons">build</i>Professionals</a></li>
+    <li><a class="waves-effect" href="admin_bookings.html"><i class="material-icons">event</i>Bookings</a></li>
+    <li><a class="waves-effect" href="admin_jobs.html"><i class="material-icons">work</i>Jobs</a></li>
+    <li><a class="waves-effect" href="admin_payments.html"><i class="material-icons">payment</i>Payments</a></li>
+    <li><a class="waves-effect" href="admin_services.html"><i class="material-icons">design_services</i>Services</a></li>
+  </ul>
+
+  <main>
+    <div class="container admin-content">
+      <h4 class="center-align">Welcome to the Admin Dashboard!</h4>
+      <p class="center-align">Use the sidebar to navigate through various management sections.</p>
+      <div class="row">
+        <div class="col s12 m6 l3">
+          <div class="card-panel center-align deep-orange lighten-1 white-text">
+            <i class="material-icons large">group</i>
+            <h5>Total Users</h5>
+            <h4 id="total-users">0</h4>
+          </div>
+        </div>
+        <div class="col s12 m6 l3">
+          <div class="card-panel center-align light-blue lighten-1 white-text">
+            <i class="material-icons large">construction</i>
+            <h5>Total Pros</h5>
+            <h4 id="total-pros">0</h4>
+          </div>
+        </div>
+        <div class="col s12 m6 l3">
+          <div class="card-panel center-align green lighten-1 white-text">
+            <i class="material-icons large">event_available</i>
+            <h5>Total Bookings</h5>
+            <h4 id="total-bookings">0</h4>
+          </div>
+        </div>
+        <div class="col s12 m6 l3">
+          <div class="card-panel center-align purple lighten-1 white-text">
+            <i class="material-icons large">paid</i>
+            <h5>Total Payments</h5>
+            <h4 id="total-payments">0</h4>
+          </div>
+        </div>
+      </div>
+      </div>
+  </main>
+
+  <script src="js/jquery.js"></script>
+  <script src="js/materialize.min.js"></script>
+  <script src="js/admin_dashboard.js"></script>
+  <script>
+    $(document).ready(function(){
+      $('.sidenav').sidenav();
+    });
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('jwt_token');
+            const role = localStorage.getItem('user_role');
+            const userName = localStorage.getItem('user_name');
+            const userEmail = localStorage.getItem('user_email');
+
+            if (!token || role !== 'admin') {
+                M.toast({html: 'Unauthorized. Please login as an admin.', classes: 'red'});
+                window.location.href = 'admin_login.html'; // <-- CHANGED THIS LINE
+            } else {
+                if (userName) $('#admin-user-name').text(userName);
+                if (userEmail) $('#admin-user-email').text(userEmail);
+                // Data loading logic in admin_dashboard.js
+            }
+
+            $('#admin-logout-btn').on('click', function() {
+                localStorage.removeItem('jwt_token');
+                localStorage.removeItem('user_role');
+                localStorage.removeItem('user_name');
+                localStorage.removeItem('user_email');
+                M.toast({html: 'Logged out successfully!', classes: 'green'});
+                window.location.href = 'admin_login.html'; // <-- CHANGED THIS LINE
+            });
+        });
+  </script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Services</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/toast.css">
+  <style>
+    .data-table {
+        margin-top: 20px;
+    }
+    .data-table th, .data-table td {
+        padding: 10px 5px;
+        text-align: left;
+        font-size: 0.9em;
+    }
+    .data-table .btn-small {
+        padding: 0 10px;
+        line-height: 28px;
+        height: 28px;
+        font-size: 0.8em;
+        margin-right: 5px;
+    }
+    .action-btns button {
+        margin-bottom: 5px; /* Add some spacing between buttons */
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="admin-navbar orange darken-3">
+    <div class="nav-wrapper">
+      <a href="#" class="brand-logo center">Admin Dashboard</a>
+      <a href="#" data-target="sidenav-left" class="sidenav-trigger show-on-large"><i class="material-icons">menu</i></a>
+      <ul class="right hide-on-med-and-down">
+        <li><a href="#" id="admin-logout-btn-services"><i class="material-icons left">power_settings_new</i>Logout</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <ul id="sidenav-left" class="sidenav sidenav-fixed">
+    <li><div class="user-view">
+      <div class="background">
+        <img src="images/office.jpg">
+      </div>
+      <a href="#user"><img class="circle" src="images/yuna.jpg"></a>
+      <a href="#name"><span class="white-text name" id="admin-user-name">Admin User</span></a>
+      <a href="#email"><span class="white-text email" id="admin-user-email">admin@example.com</span></a>
+    </div></li>
+    <li><a class="waves-effect" href="admin_dashboard.html"><i class="material-icons">dashboard</i>Dashboard</a></li>
+    <li><div class="divider"></div></li>
+    <li><a class="subheader">Management</a></li>
+    <li><a class="waves-effect" href="admin_users.html"><i class="material-icons">people</i>Users</a></li>
+    <li><a class="waves-effect" href="admin_professionals.html"><i class="material-icons">build</i>Professionals</a></li>
+    <li><a class="waves-effect" href="admin_bookings.html"><i class="material-icons">event</i>Bookings</a></li>
+    <li><a class="waves-effect" href="admin_jobs.html"><i class="material-icons">work</i>Jobs</a></li>
+    <li><a class="waves-effect" href="admin_payments.html"><i class="material-icons">payment</i>Payments</a></li>
+    <li class="active"><a class="waves-effect" href="admin_services.html"><i class="material-icons">design_services</i>Services</a></li>
+  </ul>
+
+  <main>
+    <div class="container admin-content">
+      <h4 class="center-align">Manage Services</h4>
+      <div class="fixed-action-btn">
+        <a class="btn-floating btn-large green modal-trigger" href="#add-service-modal">
+          <i class="large material-icons">add</i>
+        </a>
+      </div>
+      <div class="progress" id="loader" style="display:none;">
+          <div class="indeterminate"></div>
+      </div>
+      <table class="striped responsive-table data-table" id="services-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Price</th>
+            <th>Category ID</th>
+            <th>Created At</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          </tbody>
+      </table>
+
+      <div id="add-service-modal" class="modal">
+        <div class="modal-content">
+          <h4>Add New Service</h4>
+          <form id="add-service-form">
+            <div class="input-field">
+              <input type="text" id="add-service-name" required>
+              <label for="add-service-name">Service Name</label>
+            </div>
+            <div class="input-field">
+              <textarea id="add-service-description" class="materialize-textarea" required></textarea>
+              <label for="add-service-description">Description</label>
+            </div>
+            <div class="input-field">
+              <input type="number" step="0.01" id="add-service-price" required>
+              <label for="add-service-price">Price</label>
+            </div>
+            <div class="input-field">
+              <input type="number" id="add-service-category-id" required>
+              <label for="add-service-category-id">Category ID</label>
+              <span class="helper-text">If you have a 'categories' table, ensure this ID exists there.</span>
+            </div>
+            <button type="submit" class="btn waves-effect waves-light green">Add Service</button>
+            <a href="#!" class="modal-close waves-effect waves-red btn-flat">Cancel</a>
+          </form>
+        </div>
+      </div>
+
+      <div id="edit-service-modal" class="modal">
+        <div class="modal-content">
+          <h4>Edit Service</h4>
+          <form id="edit-service-form">
+            <input type="hidden" id="edit-service-id">
+            <div class="input-field">
+              <input type="text" id="edit-service-name" required>
+              <label for="edit-service-name">Service Name</label>
+            </div>
+            <div class="input-field">
+              <textarea id="edit-service-description" class="materialize-textarea" required></textarea>
+              <label for="edit-service-description">Description</label>
+            </div>
+            <div class="input-field">
+              <input type="number" step="0.01" id="edit-service-price" required>
+              <label for="edit-service-price">Price</label>
+            </div>
+            <div class="input-field">
+              <input type="number" id="edit-service-category-id" required>
+              <label for="edit-service-category-id">Category ID</label>
+            </div>
+            <button type="submit" class="btn waves-effect waves-light blue lighten-1">Update</button>
+            <a href="#!" class="modal-close waves-effect waves-red btn-flat">Cancel</a>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/jquery.js"></script>
+  <script src="js/materialize.min.js"></script>
+  <script src="js/admin_services.js"></script>
+  <script>
+    $(document).ready(function(){
+      $('.sidenav').sidenav();
+      $('.modal').modal();
+      // Textarea auto-resize (for descriptions in modals)
+      M.textareaAutoResize($('#add-service-description'));
+      M.textareaAutoResize($('#edit-service-description'));
+    });
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('jwt_token');
+            const role = localStorage.getItem('user_role');
+            const userName = localStorage.getItem('user_name');
+            const userEmail = localStorage.getItem('user_email');
+
+            if (!token || role !== 'admin') {
+                M.toast({html: 'Unauthorized. Please login as an admin.', classes: 'red'});
+                window.location.href = 'admin_login.html'; // <-- CHANGED THIS LINE
+            } else {
+                if (userName) $('#admin-user-name').text(userName);
+                if (userEmail) $('#admin-user-email').text(userEmail);
+                // Data loading logic in admin_dashboard.js
+            }
+
+            $('#admin-logout-btn').on('click', function() {
+                localStorage.removeItem('jwt_token');
+                localStorage.removeItem('user_role');
+                localStorage.removeItem('user_name');
+                localStorage.removeItem('user_email');
+                M.toast({html: 'Logged out successfully!', classes: 'green'});
+                window.location.href = 'admin_login.html'; // <-- CHANGED THIS LINE
+            });
+        });
+  </script>
+</body>
+</html>

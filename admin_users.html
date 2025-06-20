@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Users</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/toast.css">
+  <style>
+    .data-table {
+        margin-top: 20px;
+    }
+    .data-table th, .data-table td {
+        padding: 10px 5px;
+        text-align: left;
+        font-size: 0.9em;
+    }
+    .data-table .btn-small {
+        padding: 0 10px;
+        line-height: 28px;
+        height: 28px;
+        font-size: 0.8em;
+    }
+    .action-btns button {
+        margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="admin-navbar orange darken-3">
+    <div class="nav-wrapper">
+      <a href="#" class="brand-logo center">Admin Dashboard</a>
+      <a href="#" data-target="sidenav-left" class="sidenav-trigger show-on-large"><i class="material-icons">menu</i></a>
+      <ul class="right hide-on-med-and-down">
+        <li><a href="#" id="admin-logout-btn-users"><i class="material-icons left">power_settings_new</i>Logout</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <ul id="sidenav-left" class="sidenav sidenav-fixed">
+    <li><div class="user-view">
+      <div class="background">
+        <img src="images/office.jpg">
+      </div>
+      <a href="#user"><img class="circle" src="images/yuna.jpg"></a>
+      <a href="#name"><span class="white-text name" id="admin-user-name">Admin User</span></a>
+      <a href="#email"><span class="white-text email" id="admin-user-email">admin@example.com</span></a>
+    </div></li>
+    <li><a class="waves-effect" href="admin_dashboard.html"><i class="material-icons">dashboard</i>Dashboard</a></li>
+    <li><div class="divider"></div></li>
+    <li><a class="subheader">Management</a></li>
+    <li class="active"><a class="waves-effect" href="admin_users.html"><i class="material-icons">people</i>Users</a></li>
+    <li><a class="waves-effect" href="admin_professionals.html"><i class="material-icons">build</i>Professionals</a></li>
+    <li><a class="waves-effect" href="admin_bookings.html"><i class="material-icons">event</i>Bookings</a></li>
+    <li><a class="waves-effect" href="admin_jobs.html"><i class="material-icons">work</i>Jobs</a></li>
+    <li><a class="waves-effect" href="admin_payments.html"><i class="material-icons">payment</i>Payments</a></li>
+    <li><a class="waves-effect" href="admin_services.html"><i class="material-icons">design_services</i>Services</a></li>
+  </ul>
+
+  <main>
+    <div class="container admin-content">
+      <h4 class="center-align">Manage Users</h4>
+      <div class="progress" id="loader" style="display:none;">
+          <div class="indeterminate"></div>
+      </div>
+      <table class="striped responsive-table data-table" id="users-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Role</th>
+            <th>Created At</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          </tbody>
+      </table>
+
+      <div id="edit-user-modal" class="modal">
+        <div class="modal-content">
+          <h4>Edit User</h4>
+          <form id="edit-user-form">
+            <input type="hidden" id="edit-user-id">
+            <div class="input-field">
+              <input type="text" id="edit-user-name" required>
+              <label for="edit-user-name">Name</label>
+            </div>
+            <div class="input-field">
+              <input type="email" id="edit-user-email" required>
+              <label for="edit-user-email">Email</label>
+            </div>
+            <div class="input-field">
+              <input type="text" id="edit-user-phone">
+              <label for="edit-user-phone">Phone</label>
+            </div>
+            <div class="input-field">
+                <select id="edit-user-role">
+                    <option value="user">User</option>
+                    <option value="pro">Pro</option>
+                    <option value="admin">Admin</option>
+                </select>
+                <label>Role</label>
+            </div>
+            <div class="input-field">
+              <input type="password" id="edit-user-password" placeholder="Leave blank to keep current password">
+              <label for="edit-user-password">New Password</label>
+            </div>
+            <button type="submit" class="btn waves-effect waves-light blue lighten-1">Update</button>
+            <a href="#!" class="modal-close waves-effect waves-red btn-flat">Cancel</a>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/jquery.js"></script>
+  <script src="js/materialize.min.js"></script>
+  <script src="js/admin_users.js"></script>
+  <script>
+    $(document).ready(function(){
+      $('.sidenav').sidenav();
+      $('.modal').modal();
+      $('select').formSelect(); // Initialize Materialize selects
+    });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('jwt_token');
+            const role = localStorage.getItem('user_role');
+            const userName = localStorage.getItem('user_name');
+            const userEmail = localStorage.getItem('user_email');
+
+            if (!token || role !== 'admin') {
+                M.toast({html: 'Unauthorized. Please login as an admin.', classes: 'red'});
+                window.location.href = 'admin_login.html'; // <-- CHANGED THIS LINE
+            } else {
+                if (userName) $('#admin-user-name').text(userName);
+                if (userEmail) $('#admin-user-email').text(userEmail);
+                // Data loading logic in admin_dashboard.js
+            }
+
+            $('#admin-logout-btn').on('click', function() {
+                localStorage.removeItem('jwt_token');
+                localStorage.removeItem('user_role');
+                localStorage.removeItem('user_name');
+                localStorage.removeItem('user_email');
+                M.toast({html: 'Logged out successfully!', classes: 'green'});
+                window.location.href = 'admin_login.html'; // <-- CHANGED THIS LINE
+            });
+        });
+  </script>
+</body>
+</html>
