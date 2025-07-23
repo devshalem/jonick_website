@@ -1,39 +1,38 @@
 <?php
-require_once '../../../initialize.php'; // Adjust path as needed
+require_once '../../initialize.php';
 header('Content-Type: application/json');
 
-// Authenticate and authorize admin access
-// $auth = new AuthMiddleware();
-// $userRole = $auth->checkAdmin();
+try {
+    // Ensure POST method
+    ApiHelper::requireMethod('POST');
 
-// if ($userRole !== 'admin') {
-//     echo json_encode(['status' => 'error', 'message' => 'Unauthorized access. Admin privileges required.']);
-//     exit;
-// }
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
+    // Get input (JSON or form data)
+    $input = ApiHelper::getJsonInput();
     $bookingID = $input['id'] ?? null;
     $newStatus = $input['status'] ?? null;
 
-    if (empty($bookingID) || empty($newStatus)) {
-        echo json_encode(['status' => 'error', 'message' => 'Booking ID and new status are required.']);
-        exit;
-    }
+    // Validate required fields
+    ApiHelper::validateRequiredFields($input, ['id', 'status']);
 
     // Validate allowed statuses
     $allowedStatuses = ['pending', 'confirmed', 'completed', 'cancelled'];
     if (!in_array($newStatus, $allowedStatuses)) {
-        echo json_encode(['status' => 'error', 'message' => 'Invalid status provided.']);
-        exit;
+        ApiHelper::sendJsonResponse([
+            'status'  => 'error',
+            'message' => 'Invalid status provided. Allowed: ' . implode(', ', $allowedStatuses)
+        ], 400);
     }
 
-    $response = Bookings::updateStatus($bookingID, $newStatus); // Using the updateStatus method from Bookings class
+    // Update booking status
+    $response = Bookings::updateStatus($bookingID, $newStatus);
 
-    echo json_encode($response);
-    exit;
-} else {
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request method.']);
-    exit;
+    // Return response
+    ApiHelper::sendJsonResponse($response, $response['status'] === 'success' ? 200 : 400);
+
+} catch (Exception $e) {
+    ApiHelper::sendJsonResponse([
+        'status'  => 'error',
+        'message' => 'Failed to update booking status',
+        'error'   => $e->getMessage()
+    ], 500);
 }
-?>

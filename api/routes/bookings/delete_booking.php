@@ -1,35 +1,44 @@
 <?php
-require_once '../../../initialize.php'; // Adjust path as needed
-header('Content-Type: application/json');
+require_once '../../initialize.php';
 
-// Authenticate and authorize admin access
-// $auth = new AuthMiddleware();
-// $userRole = $auth->checkAdmin();
+try {
+    // Allow only POST requests
+    ApiHelper::requireMethod('POST');
 
-// if ($userRole !== 'admin') {
-//     echo json_encode(['status' => 'error', 'message' => 'Unauthorized access. Admin privileges required.']);
-//     exit;
-// }
+    // Get JSON or form input
+    $data = ApiHelper::getJsonInput();
+    $bookingID = $data['id'] ?? null;
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
-    $bookingID = $input['id'] ?? null;
+    // Validate Booking ID
+    ApiHelper::validateRequiredFields($data, ['id']);
 
-    if (empty($bookingID)) {
-        echo json_encode(['status' => 'error', 'message' => 'Booking ID is required for deletion.']);
-        exit;
+    // Check if booking exists
+    $booking = Bookings::findById($bookingID);
+    if (!$booking) {
+        ApiHelper::sendJsonResponse([
+            'status'  => 'error',
+            'message' => 'Booking not found.'
+        ], 404);
     }
-
-    $result = Bookings::delete($bookingID);
+    // Attempt to delete booking
+    $result = $booking->delete();
 
     if ($result) {
-        echo json_encode(['status' => 'success', 'message' => 'Booking deleted successfully.']);
+        ApiHelper::sendJsonResponse([
+            'status'  => 'success',
+            'message' => 'Booking deleted successfully.'
+        ], 200);
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'Failed to delete booking.']);
+        ApiHelper::sendJsonResponse([
+            'status'  => 'error',
+            'message' => 'Failed to delete booking.'
+        ], 400);
     }
-    exit;
-} else {
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request method.']);
-    exit;
+
+} catch (Exception $e) {
+    ApiHelper::sendJsonResponse([
+        'status'  => 'error',
+        'message' => 'An error occurred while deleting the booking.',
+        'error'   => $e->getMessage()
+    ], 500);
 }
-?>

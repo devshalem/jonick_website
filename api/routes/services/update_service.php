@@ -1,36 +1,29 @@
 <?php
-require_once '../../../initialize.php'; // Adjust path as needed
-header('Content-Type: application/json');
+require_once '../../initialize.php';
 
-// Authenticate and authorize admin access
-// REMOVE OR COMMENT OUT THIS AUTHENTICATION BLOCK FOR NO LOGGING
-/*
-$auth = new AuthMiddleware();
-$userRole = $auth->checkAdmin();
+try {
+    ApiHelper::requireMethod('POST');
+    $input = ApiHelper::getJsonInput();
 
-if ($userRole !== 'admin') {
-    echo json_encode(['status' => 'error', 'message' => 'Unauthorized access. Admin privileges required.']);
-    exit;
-}
-*/
+    // Validate required field
+    ApiHelper::validateRequiredFields($input, ['id']);
+    $serviceID = $input['id'];
+    unset($input['id']); // Remove ID from data array for update
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
+    // Call the updateService method
+    $response = Services::updateService($serviceID, $input);
 
-    if (!isset($input['id']) || empty($input['id'])) {
-        echo json_encode(['status' => 'error', 'message' => 'Service ID is required for update.']);
-        exit;
+    // Validate response structure
+    if (!is_array($response) || !isset($response['status'])) {
+        throw new Exception('Invalid response from Services::updateService');
     }
 
-    $serviceID = $input['id'];
-    unset($input['id']); // Remove ID from the data array as updateService expects it separately
+    ApiHelper::sendJsonResponse($response, $response['status'] === 'success' ? 200 : 400);
 
-    $response = Services::updateService($serviceID, $input); // Using the updateService method
-
-    echo json_encode($response);
-    exit;
-} else {
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request method.']);
-    exit;
+} catch (Exception $e) {
+    ApiHelper::sendJsonResponse([
+        'status'  => 'error',
+        'message' => 'Failed to update service.',
+        'error'   => $e->getMessage()
+    ], 500);
 }
-?>

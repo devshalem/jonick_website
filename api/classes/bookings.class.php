@@ -95,8 +95,73 @@ class Bookings extends DatabaseObject
         return self::findById($id);
     }
 
+    /**
+     * Get all bookings or a single booking by ID.
+     * Joins with users, professionals, and services.
+     *
+     * @param int|null $id
+     * @return array|false
+     */
+    public static function getBookings($id = null)
+    {
+       $sql = "
+            SELECT  
+                bookings.id AS booking_id,
+                bookings.status AS booking_status,
+                bookings.appointment_date AS appointment_date,
+                bookings.total_price AS total_price,
+                bookings.created_at AS date_created,
+                bookings.updated_at AS date_updated,
+
+                users.id AS user_id,
+                users.name AS user_name,
+                users.email AS user_email,
+
+                professionals.id AS professional_id,
+                professionals.expertise AS professional_expertise,
+
+                services.id AS service_id,
+                services.name AS service_name,
+                services.description AS service_description,
+                services.price AS service_price
+            FROM 
+                bookings
+            JOIN 
+                users ON bookings.user_id = users.id
+            LEFT JOIN 
+                professionals ON bookings.professional_id = professionals.id
+            JOIN 
+                services ON bookings.service_id = services.id
+        ";
+
+        $params = [];
+        if (!is_null($id)) {
+            $sql .= " WHERE bookings.id = :id";
+            $params['id'] = $id;
+        }
+
+        $sql .= "
+            GROUP BY 
+                bookings.id,
+                bookings.status,
+                bookings.appointment_date,
+                bookings.total_price,
+                bookings.created_at,
+                bookings.updated_at,
+                users.id,
+                professionals.id,
+                services.id
+            ORDER BY 
+                bookings.created_at DESC
+        ";
+
+        $stmt = self::executeQuery($sql, $params);
+        return $id ? $stmt->fetch(PDO::FETCH_ASSOC) : $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    }
+
     // Validation for booking fields
-    protected function validate()
+    public function validate()
     {
         $this->errors = [];
 

@@ -5,16 +5,15 @@ try {
     ApiHelper::requireMethod('POST');
     $input = ApiHelper::getJsonInput();
 
-    // Validate required field
+    // Validate required fields
     ApiHelper::validateRequiredFields($input, ['id']);
-    $serviceID = $input['id'];
+    $categoryID = $input['id'];
+    unset($input['id']); // Remove ID from update data
 
-    // Call the deleteService method
-    $response = Services::deleteService($serviceID);
+    $response = Categories::updateCategory($categoryID, $input);
 
-    // Ensure proper response structure
     if (!is_array($response) || !isset($response['status'])) {
-        throw new Exception('Invalid response from Services::deleteService');
+        throw new Exception('Invalid response from Categories::updateCategory');
     }
 
     ApiHelper::sendJsonResponse($response, $response['status'] === 'success' ? 200 : 400);
@@ -22,7 +21,7 @@ try {
 } catch (Exception $e) {
     ApiHelper::sendJsonResponse([
         'status'  => 'error',
-        'message' => 'Failed to delete service.',
+        'message' => 'Failed to update category.',
         'error'   => $e->getMessage()
     ], 500);
 }

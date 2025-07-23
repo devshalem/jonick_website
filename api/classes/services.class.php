@@ -32,7 +32,7 @@ class Services extends DatabaseObject
     // Create a new service
     static public function createService($data)
     {
-        $service = new self($data);
+        $service = new Services($data);
 
         $errors = $service->validate();
         if (!empty($errors)) {
@@ -56,10 +56,13 @@ class Services extends DatabaseObject
         }
 
         $service->mergeAttributes($data);
-        $errors = $service->validate();
-
-        if (!empty($errors)) {
-            return ['status' => 'error', 'message' => 'Validation failed', 'errors' => $errors];
+        $service->updated_at = date('Y-m-d H:i:s'); // Ensure timestamp is updated
+        // If the validate method is not defined, we can skip this step
+        if (method_exists($service, 'validate')) {
+            $errors = $service->validate();
+            if (!empty($errors)) {
+                return ['status' => 'error', 'message' => 'Validation failed', 'errors' => $errors];
+            }
         }
 
         $update_query = $service->save();
@@ -67,6 +70,31 @@ class Services extends DatabaseObject
         return $update_query
             ? ['status' => 'success', 'message' => 'Service updated successfully']
             : ['status' => 'error', 'message' => 'Service update failed'];
+    }
+
+    // find a service by category
+    static public function findServicesByCategory($categoryID)
+    {
+        // SQL to fetch services for a given category
+        $sql = "
+            SELECT 
+                services.id AS service_id,
+                services.name AS service_name,
+                services.description AS service_description,
+                services.price AS service_price,
+                services.created_at AS service_created_at,
+                services.updated_at AS service_updated_at,
+                categories.id AS category_id,
+                categories.name AS category_name
+            FROM services
+            JOIN categories ON services.category_id = categories.id
+            WHERE services.category_id = :category_id
+            ORDER BY services.created_at DESC
+        ";
+
+        $services = Services::executeQuery($sql, ['category_id' => $categoryID])
+            ->fetchAll(PDO::FETCH_ASSOC);
+        return $services;
     }
 
     // Delete a service
@@ -97,16 +125,8 @@ class Services extends DatabaseObject
         return self::findById($id);
     }
 
-    // Retrieve services by category
-    static public function findServicesByCategory($category_id)
-    {
-        $sql = "SELECT * FROM " . static::$table_name . " WHERE category_id = :category_id";
-        $stmt = self::executeQuery($sql, ['category_id' => $category_id]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
     // Validation for service fields
-    protected function validate()
+    public function validate()
     {
         $this->errors = [];
 

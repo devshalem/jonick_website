@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit;
     }
 
-    $professional = Professionals::findProfessionalById($input['id']);
+    $professional = Professionals::findProfessionalsById($input['id']);
 
     if (!$professional) {
         echo json_encode(['status' => 'error', 'message' => 'Professional not found.']);

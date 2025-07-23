@@ -1,38 +1,44 @@
 <?php
-error_reporting(E_ALL);       // Crucial for displaying errors
-ini_set('display_errors', 1); // Crucial for displaying errors
-header('Content-Type: application/json'); // Keep this, it should be set last by PHP if no other errors occ
+require_once '../../initialize.php';
+
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 try {
-    require_once '../../initialize.php';
+    // Ensure POST method
+    ApiHelper::requireMethod('POST');
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $data = $_POST;
-        error_log("Register POST Data: " . print_r($data, true)); // <-- ADD THIS LINE
+    // Get input data (handles JSON and form data)
+    $data = ApiHelper::getJsonInput();
+    error_log("Register POST Data: " . print_r($data, true));
 
-       if (empty($data['name']) || empty($data['email']) || empty($data['password'])) { // <-- CHANGED THIS LINE
-    echo json_encode(['status' => 'error', 'message' => 'Name, Email, and Password are required.']);
-    exit;
-}
+    // Validate required fields
+    ApiHelper::validateRequiredFields($data, ['name', 'email', 'password']);
 
-        $response = Users::register($data); // This should return ['status' => 'success', 'message' => '...'] or ['status' => 'error', 'message' => '...']
-        echo json_encode($response);
-        exit;
+    // Register user
+    $response = Users::register($data);
 
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'Invalid request method']);
-        exit;
+    // Ensure response has a status key
+    if (!isset($response['status'])) {
+        throw new Exception('Invalid response structure from Users::register');
     }
-} catch (PDOException $e) {
-    // Catch database-specific connection errors
-    error_log("PDO Exception: " . $e->getMessage()); // Log the error for server-side debugging
-    echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]); // Expose message for debugging
-    exit;
-} catch (Exception $e) {
-    // Catch any other general exceptions (e.g., from credentials.php or other early includes)
-    error_log("General Exception: " . $e->getMessage()); // Log the error
-    echo json_encode(['status' => 'error', 'message' => 'An internal server error occurred: ' . $e->getMessage()]); // Expose message for debugging
-    exit;
-}
 
-?>
+    // Send response
+    ApiHelper::sendJsonResponse($response, $response['status'] === 'success' ? 200 : 400);
+
+} catch (PDOException $e) {
+    error_log("PDO Exception: " . $e->getMessage());
+    ApiHelper::sendJsonResponse([
+        'status'  => 'error',
+        'message' => 'Database error occurred',
+        'error'   => $e->getMessage() // Can hide in production
+    ], 500);
+
+} catch (Exception $e) {
+    error_log("General Exception: " . $e->getMessage());
+    ApiHelper::sendJsonResponse([
+        'status'  => 'error',
+        'message' => 'An internal server error occurred',
+        'error'   => $e->getMessage() // Can hide in production
+    ], 500);
+}

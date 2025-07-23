@@ -1,33 +1,28 @@
 <?php
-require_once '../../../initialize.php'; // Adjust path as needed
-header('Content-Type: application/json');
+require_once '../../initialize.php';
 
-// REMOVE OR COMMENT OUT THIS AUTHENTICATION BLOCK FOR NO LOGGING
-/*
-$auth = new AuthMiddleware();
-$userRole = $auth->checkAdmin();
+try {
+    ApiHelper::requireMethod('POST');
+    $input = ApiHelper::getJsonInput();
 
-if ($userRole !== 'admin') {
-    echo json_encode(['status' => 'error', 'message' => 'Unauthorized access. Admin privileges required.']);
-    exit;
-}
-*/
+    // Validate professional ID
+    ApiHelper::validateRequiredFields($input, ['id']);
+    $professionalID = $input['id'];
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
-    $professionalID = $input['id'] ?? null;
+    // Approve professional
+    $response = Professionals::approve($professionalID);
 
-    if (empty($professionalID)) {
-        echo json_encode(['status' => 'error', 'message' => 'Professional ID is required for approval.']);
-        exit;
+    // Ensure the response is in the correct structure
+    if (!is_array($response) || !isset($response['status'])) {
+        throw new Exception('Invalid response structure from Professionals::approve');
     }
 
-    $response = Professionals::approve($professionalID); // Using the approve method from Professionals class
+    ApiHelper::sendJsonResponse($response, $response['status'] === 'success' ? 200 : 400);
 
-    echo json_encode($response);
-    exit;
-} else {
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request method.']);
-    exit;
+} catch (Exception $e) {
+    ApiHelper::sendJsonResponse([
+        'status'  => 'error',
+        'message' => 'Professional approval failed.',
+        'error'   => $e->getMessage()
+    ], 500);
 }
-?>

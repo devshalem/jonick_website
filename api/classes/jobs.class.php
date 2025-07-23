@@ -33,6 +33,28 @@ class Jobs extends DatabaseObject
         $this->updated_at = $args['updated_at'] ?? null;
     }
 
+    // Validate job data
+    public function validate()
+    {
+        $errors = [];
+
+        if (empty($this->service_id)) {
+            $errors[] = "Service ID is required.";
+        }
+        if (empty($this->user_id)) {
+            $errors[] = "User ID is required.";
+        }
+        if (empty($this->scheduled_date)) {
+            $errors[] = "Scheduled date is required.";
+        }
+        if (!in_array($this->status, ['pending', 'in_progress', 'completed', 'canceled'])) {
+            $errors[] = "Invalid status value.";
+        }
+        // Add more validation as needed
+
+        return $errors;
+    }
+
     // Create a job
     static public function createJob($data)
     {
@@ -65,12 +87,45 @@ class Jobs extends DatabaseObject
     }
 
     // Retrieve jobs by professional
-    static public function findJobsByProfessional($professional_id)
+    static public function findJobsByProfessional($professionalId)
     {
-        $sql = "SELECT * FROM " . static::$table_name . " WHERE professional_id = :professional_id";
-        $stmt = self::executeQuery($sql, ['professional_id' => $professional_id]);
+        $sql = "
+            SELECT  
+                jobs.id AS job_id,
+                jobs.status AS job_status,
+                jobs.description AS job_description,
+                jobs.scheduled_date AS scheduled_date,
+                jobs.created_at AS date_created,
+                jobs.updated_at AS date_updated,
+
+                users.id AS user_id,
+                users.name AS user_name,
+                users.email AS user_email,
+
+                professionals.id AS professional_id,
+                professionals.expertise AS professional_expertise,
+
+                services.id AS service_id,
+                services.name AS service_name,
+                services.description AS service_description
+            FROM 
+                jobs
+            JOIN 
+                users ON jobs.user_id = users.id
+            LEFT JOIN 
+                professionals ON jobs.professional_id = professionals.id
+            JOIN 
+                services ON jobs.service_id = services.id
+            WHERE 
+                jobs.professional_id = :professional_id
+            ORDER BY 
+                jobs.created_at DESC
+        ";
+
+        $stmt = self::executeQuery($sql, ['professional_id' => $professionalId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
 
     // Retrieve jobs by user
     static public function findJobsByUser($user_id)
@@ -96,31 +151,58 @@ class Jobs extends DatabaseObject
             ? ['status' => 'success', 'message' => 'Job status updated successfully']
             : ['status' => 'error', 'message' => 'Job status update failed'];
     }
-
-    // Validation for job fields
-    protected function validate()
+    
+    // Retrieve job by ID
+    static public function findJobById($jobId = null)
     {
-        $this->errors = [];
+        // Build SQL
+        $sql = "
+            SELECT  
+                jobs.id AS job_id,
+                jobs.status AS job_status,
+                jobs.description AS job_description,
+                jobs.scheduled_date AS scheduled_date,
+                jobs.created_at AS date_created,
+                jobs.updated_at AS date_updated,
 
-        if (empty($this->service_id)) {
-            $this->errors[] = "Service ID is required.";
+                users.id AS user_id,
+                users.name AS user_name,
+                users.email AS user_email,
+
+                professionals.id AS professional_id,
+                professionals.expertise AS professional_expertise,
+
+                services.id AS service_id,
+                services.name AS service_name,
+                services.description AS service_description
+            FROM 
+                jobs
+            JOIN 
+                users ON jobs.user_id = users.id
+            LEFT JOIN 
+                professionals ON jobs.professional_id = professionals.id
+            JOIN 
+                services ON jobs.service_id = services.id
+        ";
+
+        $params = [];
+        if (!is_null($jobId)) {
+            $sql .= " WHERE jobs.id = :id";
+            $params['id'] = $jobId;
         }
 
-        if (empty($this->user_id)) {
-            $this->errors[] = "User ID is required.";
-        }
+        $sql .= "
+            GROUP BY 
+                jobs.id,
+                users.id,
+                professionals.id,
+                services.id
+            ORDER BY 
+                jobs.created_at DESC
+        ";
 
-        if (empty($this->scheduled_date)) {
-            $this->errors[] = "Scheduled date is required.";
-        }
-
-        return $this->errors;
-    }
-
-    // Helper functions
-    private function is_blank($value)
-    {
-        return !isset($value) || trim($value) === '';
+        $stmt = self::executeQuery($sql, $params);
+        return $jobId ? $stmt->fetch(PDO::FETCH_ASSOC) : $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
 

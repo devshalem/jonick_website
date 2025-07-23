@@ -1,60 +1,54 @@
 <?php
-require_once '../../../initialize.php'; // Adjust path as needed
+require_once '../../initialize.php';
 header('Content-Type: application/json');
 
-// Authenticate and authorize admin access
-// $auth = new AuthMiddleware();
-// $userRole = $auth->checkAdmin();
+try {
+    // Ensure POST method
+    ApiHelper::requireMethod('POST');
 
-// if ($userRole !== 'admin') {
-//     echo json_encode(['status' => 'error', 'message' => 'Unauthorized access. Admin privileges required.']);
-//     exit;
-// }
+    // Get JSON or form-data input
+    $input = ApiHelper::getJsonInput();
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
+    // Validate that 'id' is present
+    ApiHelper::validateRequiredFields($input, ['id']);
 
-    if (!isset($input['id']) || empty($input['id'])) {
-        echo json_encode(['status' => 'error', 'message' => 'Booking ID is required for update.']);
-        exit;
-    }
-
+    // Find booking by ID
     $booking = Bookings::findBookingById($input['id']);
-
     if (!$booking) {
-        echo json_encode(['status' => 'error', 'message' => 'Booking not found.']);
-        exit;
+        ApiHelper::sendJsonResponse([
+            'status' => 'error',
+            'message' => 'Booking not found.'
+        ], 404);
     }
 
     // Merge only allowed fields
     $allowedFields = ['user_id', 'service_id', 'professional_id', 'status', 'appointment_date', 'total_price'];
-    $updateData = [];
-    foreach ($allowedFields as $field) {
-        if (isset($input[$field])) {
-            $updateData[$field] = $input[$field];
-        }
-    }
-
+    $updateData = array_intersect_key($input, array_flip($allowedFields));
+    
     $booking->mergeAttributes($updateData);
-    $booking->updated_at = date('Y-m-d H:i:s'); // Update timestamp
+    $booking->updated_at = date('Y-m-d H:i:s'); // Set updated timestamp
 
-    // Validate the booking object before saving
+    // Validate the booking
     $errors = $booking->validate();
     if (!empty($errors)) {
-        echo json_encode(['status' => 'error', 'message' => 'Validation failed', 'errors' => $errors]);
-        exit;
+        ApiHelper::sendJsonResponse([
+            'status'  => 'error',
+            'message' => 'Validation failed',
+            'errors'  => $errors
+        ], 400);
     }
 
-    $result = $booking->save(); // Save will call update() if ID exists
+    // Save the booking
+    $result = $booking->save();
+    ApiHelper::sendJsonResponse([
+        'status'  => $result ? 'success' : 'error',
+        'message' => $result ? 'Booking updated successfully.' : 'Failed to update booking.'
+    ], $result ? 200 : 500);
 
-    if ($result) {
-        echo json_encode(['status' => 'success', 'message' => 'Booking updated successfully.']);
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'Failed to update booking.']);
-    }
-    exit;
-} else {
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request method.']);
-    exit;
+} catch (Exception $e) {
+    ApiHelper::sendJsonResponse([
+        'status'  => 'error',
+        'message' => 'Booking update failed.',
+        'error'   => $e->getMessage()
+    ], 500);
 }
-?>

@@ -1,35 +1,51 @@
 <?php
-require_once '../../../initialize.php'; // Adjust path as needed
-header('Content-Type: application/json');
+require_once '../../initialize.php';
 
-// Authenticate and authorize admin access
-// $auth = new AuthMiddleware();
-// $userRole = $auth->checkAdmin();
+try {
+    // Ensure POST method
+    ApiHelper::requireMethod('POST');
 
-// if ($userRole !== 'admin') {
-//     echo json_encode(['status' => 'error', 'message' => 'Unauthorized access. Admin privileges required.']);
-//     exit;
-// }
+    // Parse input data
+    $input = ApiHelper::getJsonInput();
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
-    $paymentID = $input['id'] ?? null;
+    // Validate required field
+    ApiHelper::validateRequiredFields($input, ['id']);
+    $paymentID = $input['id'];
 
-    if (empty($paymentID)) {
-        echo json_encode(['status' => 'error', 'message' => 'Payment ID is required for deletion.']);
-        exit;
-    }
-
-    $result = Payments::delete($paymentID); // Using delete method from DatabaseObject
+    // Find payment by ID
+    $payment = Payments::findById($paymentID);
+    if (!$payment) {
+        ApiHelper::sendJsonResponse([
+            'status'  => 'error',
+            'message' => 'Payment not found.'
+        ], 404);
+    }   
+    // Check if payment can be deleted (e.g., not already processed)
+    if ($payment->status !== 'pending') {
+        ApiHelper::sendJsonResponse([
+            'status'  => 'error',
+            'message' => 'Payment cannot be deleted as it is not in a pending state.'
+        ], 400);
+    }   
+    // Attempt deletion
+    $result = $payment->delete();
 
     if ($result) {
-        echo json_encode(['status' => 'success', 'message' => 'Payment deleted successfully.']);
+        ApiHelper::sendJsonResponse([
+            'status'  => 'success',
+            'message' => 'Payment deleted successfully.'
+        ], 200);
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'Failed to delete payment.']);
+        ApiHelper::sendJsonResponse([
+            'status'  => 'error',
+            'message' => 'Failed to delete payment.'
+        ], 500);
     }
-    exit;
-} else {
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request method.']);
-    exit;
+
+} catch (Exception $e) {
+    ApiHelper::sendJsonResponse([
+        'status'  => 'error',
+        'message' => 'An error occurred while deleting payment.',
+        'error'   => $e->getMessage()
+    ], 500);
 }
-?>

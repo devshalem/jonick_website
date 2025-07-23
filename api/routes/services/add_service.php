@@ -1,32 +1,31 @@
 <?php
-require_once '../../../initialize.php'; // Adjust path as needed
-header('Content-Type: application/json');
+require_once '../../initialize.php';
 
-// REMOVE OR COMMENT OUT THIS AUTHENTICATION BLOCK FOR NO LOGGING
-/*
-$auth = new AuthMiddleware();
-$userRole = $auth->checkAdmin();
+try {
+    ApiHelper::requireMethod('POST');
+    $input = ApiHelper::getJsonInput();
 
-if ($userRole !== 'admin') {
-    echo json_encode(['status' => 'error', 'message' => 'Unauthorized access. Admin privileges required.']);
-    exit;
-}
-*/
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $data = json_decode(file_get_contents('php://input'), true);
-
-    if ($data === null) {
-        echo json_encode(['status' => 'error', 'message' => 'Invalid data input']);
-        exit;
+    if ($input === null) {
+        ApiHelper::sendJsonResponse([
+            'status'  => 'error',
+            'message' => 'Invalid data input'
+        ], 400);
     }
 
-    $response = Services::createService($data); // Using the createService method
+    // Call the createService method
+    $response = Services::createService($input);
 
-    echo json_encode($response);
-    exit;
-} else {
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request method.']);
-    exit;
+    // Ensure proper response structure
+    if (!is_array($response) || !isset($response['status'])) {
+        throw new Exception('Invalid response from Services::createService');
+    }
+
+    ApiHelper::sendJsonResponse($response, $response['status'] === 'success' ? 200 : 400);
+
+} catch (Exception $e) {
+    ApiHelper::sendJsonResponse([
+        'status'  => 'error',
+        'message' => 'Failed to create service.',
+        'error'   => $e->getMessage()
+    ], 500);
 }
-?>

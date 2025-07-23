@@ -1,35 +1,34 @@
 <?php
-require_once '../../../initialize.php'; // Adjust path as needed
-header('Content-Type: application/json');
+require_once '../../initialize.php';
 
-// Authenticate and authorize admin access
-// $auth = new AuthMiddleware();
-// $userRole = $auth->checkAdmin();
+try {
+    ApiHelper::requireMethod('POST');
+    $input = ApiHelper::getJsonInput();
 
-// if ($userRole !== 'admin') {
-//     echo json_encode(['status' => 'error', 'message' => 'Unauthorized access. Admin privileges required.']);
-//     exit;
-// }
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
-    $professionalID = $input['id'] ?? null;
-
-    if (empty($professionalID)) {
-        echo json_encode(['status' => 'error', 'message' => 'Professional ID is required for deletion.']);
-        exit;
-    }
-
-    $result = Professionals::delete($professionalID);
+    // Validate Professional ID
+    ApiHelper::validateRequiredFields($input, ['id']);
+    $professionalID = $input['id'];
+    // Check if the professional exists
+    $professional = Professionals::findProfessionalsById($professionalID);
+    // Delete the professional
+    $result = $professional->delete();
 
     if ($result) {
-        echo json_encode(['status' => 'success', 'message' => 'Professional deleted successfully.']);
+        ApiHelper::sendJsonResponse([
+            'status'  => 'success',
+            'message' => 'Professional deleted successfully.'
+        ], 200);
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'Failed to delete professional.']);
+        ApiHelper::sendJsonResponse([
+            'status'  => 'error',
+            'message' => 'Failed to delete professional.'
+        ], 400);
     }
-    exit;
-} else {
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request method.']);
-    exit;
+
+} catch (Exception $e) {
+    ApiHelper::sendJsonResponse([
+        'status'  => 'error',
+        'message' => 'Professional deletion failed.',
+        'error'   => $e->getMessage()
+    ], 500);
 }
-?>

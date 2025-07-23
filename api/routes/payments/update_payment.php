@@ -1,33 +1,24 @@
 <?php
-require_once '../../../initialize.php'; // Adjust path as needed
-header('Content-Type: application/json');
+require_once '../../initialize.php';
 
-// Authenticate and authorize admin access
-// $auth = new AuthMiddleware();
-// $userRole = $auth->checkAdmin();
+try {
+    // Allow only POST
+    ApiHelper::requireMethod('POST');
 
-// if ($userRole !== 'admin') {
-//     echo json_encode(['status' => 'error', 'message' => 'Unauthorized access. Admin privileges required.']);
-//     exit;
-// }
+    // Get request data
+    $input = ApiHelper::getJsonInput();
+    ApiHelper::validateRequiredFields($input, ['id']);
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
-
-    if (!isset($input['id']) || empty($input['id'])) {
-        echo json_encode(['status' => 'error', 'message' => 'Payment ID is required for update.']);
-        exit;
-    }
-
-    $payment = Payments::findById($input['id']); // Using findById from DatabaseObject
-
+    // Fetch payment by ID
+    $payment = Payments::findById($input['id']);
     if (!$payment) {
-        echo json_encode(['status' => 'error', 'message' => 'Payment not found.']);
-        exit;
+        ApiHelper::sendJsonResponse([
+            'status' => 'error',
+            'message' => 'Payment not found.'
+        ], 404);
     }
 
-    // Merge only allowed fields
-    // Assuming 'payments' table has fields like user_id, job_id, amount, status, transaction_id, method
+    // Merge allowed fields
     $allowedFields = ['user_id', 'job_id', 'amount', 'status', 'transaction_id', 'method'];
     $updateData = [];
     foreach ($allowedFields as $field) {
@@ -37,25 +28,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     $payment->mergeAttributes($updateData);
-    $payment->updated_at = date('Y-m-d H:i:s'); // Assuming 'updated_at' field exists
+    $payment->updated_at = date('Y-m-d H:i:s'); // Ensure timestamp is updated
 
-    // If you have a validate method in Payments class, call it here
+    // Optional: Validation (if Payments class has validate method)
     // $errors = $payment->validate();
     // if (!empty($errors)) {
-    //     echo json_encode(['status' => 'error', 'message' => 'Validation failed', 'errors' => $errors]);
-    //     exit;
+    //     ApiHelper::sendJsonResponse(['status' => 'error', 'errors' => $errors], 422);
     // }
 
-    $result = $payment->save(); // Save will call update() if ID exists
-
+    // Save payment
+    $result = $payment->save();
     if ($result) {
-        echo json_encode(['status' => 'success', 'message' => 'Payment updated successfully.']);
+        ApiHelper::sendJsonResponse([
+            'status' => 'success',
+            'message' => 'Payment updated successfully.'
+        ]);
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'Failed to update payment.']);
+        ApiHelper::sendJsonResponse([
+            'status' => 'error',
+            'message' => 'Failed to update payment.'
+        ], 500);
     }
-    exit;
-} else {
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request method.']);
-    exit;
+
+} catch (Exception $e) {
+    ApiHelper::sendJsonResponse([
+        'status'  => 'error',
+        'message' => 'Payment update failed.',
+        'error'   => $e->getMessage()
+    ], 500);
 }
-?>

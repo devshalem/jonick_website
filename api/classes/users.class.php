@@ -102,7 +102,7 @@ class Users extends DatabaseObject
     }
 
     // Validation for user fields
-    protected function validate()
+    public function validate()
     {
         $this->errors = [];
 
